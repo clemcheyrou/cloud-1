@@ -1,0 +1,8 @@
+---
+- name: Déploiement de WordPress avec Docker
+  hosts: docker
+  vars_files:
+    - vars/main.yml
+
+  roles:
+    - wordpress

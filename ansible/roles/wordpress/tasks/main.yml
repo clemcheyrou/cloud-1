@@ -1,0 +1,56 @@
+---
+- hosts: docker
+  vars_files:
+    - vars/main.yml
+
+  tasks:
+  - name: Install aptitude using apt
+    apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+
+  - name: Install required system packages for Docker
+    apt: name={{ docker_required_packages }} state=latest update_cache=yes
+
+  - name: Add Docker GPG key
+    apt_key:
+      url: "{{ docker_gpg_url }}"
+      state: present
+
+  - name: Add Docker repository
+    apt_repository:
+      repo: "{{ docker_repo }}"
+      state: present
+
+  - name: Install Docker
+    apt: name={{ docker_packges }} state=latest update_cache=yes
+
+  - name: Install Python Docker module
+    pip:
+      name: docker
+
+  - name: Add adminstrator to docker group
+    user:
+      name: "{{ admin_user }}"
+      groups: docker
+      append: yes
+      createhome: yes
+
+  - name: Install Docker Compose
+    get_url:
+      url: "{{ docker_compose_url }}"
+      dest: /usr/local/bin/docker-compose
+      mode: u+x,g+x,o+x
+
+  - name: Set up docker-compose file
+    template:
+      src: "files/docker-compose.yml"
+      dest: "/home/{{ admin_user }}/wordpress/"
+
+  - name: Set permission for docker daemon
+    file:
+      path: /var/run/docker.sock
+      mode: '0770'
+
+  - name: docker compose up
+    shell:
+      chdir: "/home/{{ admin_user }}/wordpress/"
+      cmd: docker-compose up -d
